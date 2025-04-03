@@ -1,0 +1,45 @@
+<!-- Widget Configuration -->
+
+<script>
+
+    window.ChatWidgetConfig = {
+
+        webhook: {
+
+            url: 'https://jelgezabal.app.n8n.cloud/webhook/7e56c125-3c5f-4e8f-8a59-b379580b105f/chat',
+
+            route: 'general'
+
+        },
+
+branding: {
+    logo: 'https://raw.githubusercontent.com/Jelgezabal/archivosinternet/main/cropped-LOGO-MAIL-2.png', // URL directa
+
+            name: '', // El nombre de tu empresa
+
+            welcomeText: 'Hola 👋, ¿Cómo te puedo ayudar?', //Mensaje de Bienvenida
+
+            responseTimeText: 'Te responderemos lo más rápido posible' //Tiempo de respuesta
+
+        },
+
+        style: {
+
+            primaryColor: '#854fff', //Color principal
+
+            secondaryColor: '#6b3fd4', //Color secundario
+
+            position: 'right', //posicion del widget
+
+            backgroundColor: '#ffffff', //Fondo del Widget
+
+            fontColor: '#333333' //Color para mensajes
+
+        }
+
+    };
+
+</script>
+<script src="https://jelgezabal.github.io/Chatbot-Widget/chat-widget.js"></script>
+
+<!-- Widget Script -->
