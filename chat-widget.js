@@ -296,8 +296,8 @@
             welcomeText: '',
             responseTimeText: '',
             poweredBy: {
-                text: 'Powered by n8n',
-                link: 'https://n8n.partnerlinks.io/m8a94i19zhqq?utm_source=nocodecreative.io'
+                text: 'Powered by InfinyAI',
+                link: ''
             }
         },
         style: {
@@ -363,7 +363,7 @@
             </div>
             <div class="chat-messages"></div>
             <div class="chat-input">
-                <textarea placeholder="Type your message here..." rows="1"></textarea>
+                <textarea placeholder="Escribe tu mensaje aquí:" rows="1"></textarea>
                 <button type="submit">Send</button>
             </div>
             <div class="chat-footer">
