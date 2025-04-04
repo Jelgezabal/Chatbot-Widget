@@ -296,7 +296,7 @@
             welcomeText: '',
             responseTimeText: '',
             poweredBy: {
-                text: 'Powered by InfinyAI',
+                text: '',
                 link: ''
             }
         },
