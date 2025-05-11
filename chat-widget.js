@@ -468,14 +468,20 @@
         }
     }
 
- newChatBtn.addEventListener('click', async () => {
-        if (newChatBtn.disabled) return;
-        newChatBtn.disabled = true;
-        await startNewConversation();
-        setTimeout(() => {
-            newChatBtn.disabled = false;
-        }, 3000);
-    });
+let chatStarted = false;
+
+newChatBtn.addEventListener('click', async () => {
+    if (chatStarted || newChatBtn.disabled) return;   // 🔒 bloquea cualquier clic extra
+
+    newChatBtn.disabled = true;  // evita doble-clic físico
+    chatStarted = true;          // garantiza que solo entra una vez
+
+    await startNewConversation();  // lanza tu flujo normal
+
+    setTimeout(() => {            // re-habilita el botón tras 3 s
+        newChatBtn.disabled = false;
+    }, 3000);
+});
 
     sendButton.addEventListener('click', () => {
         const message = textarea.value.trim();
