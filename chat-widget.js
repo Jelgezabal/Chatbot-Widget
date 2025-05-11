@@ -468,8 +468,15 @@
         }
     }
 
-    newChatBtn.addEventListener('click', startNewConversation);
-    
+ newChatBtn.addEventListener('click', async () => {
+        if (newChatBtn.disabled) return;
+        newChatBtn.disabled = true;
+        await startNewConversation();
+        setTimeout(() => {
+            newChatBtn.disabled = false;
+        }, 3000);
+    });
+
     sendButton.addEventListener('click', () => {
         const message = textarea.value.trim();
         if (message) {
@@ -477,7 +484,7 @@
             textarea.value = '';
         }
     });
-    
+
     textarea.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
