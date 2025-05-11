@@ -471,14 +471,14 @@
 let chatStarted = false;
 
 newChatBtn.addEventListener('click', async () => {
-    if (chatStarted || newChatBtn.disabled) return;   // 🔒 bloquea cualquier clic extra
+    if (chatStarted || newChatBtn.disabled) return; // 🔒 Bloquea clics repetidos
 
-    newChatBtn.disabled = true;  // evita doble-clic físico
-    chatStarted = true;          // garantiza que solo entra una vez
+    chatStarted = true; // Marca como iniciado
+    newChatBtn.disabled = true;
 
-    await startNewConversation();  // lanza tu flujo normal
+    await startNewConversation(); // Inicia solo una vez
 
-    setTimeout(() => {            // re-habilita el botón tras 3 s
+    setTimeout(() => {
         newChatBtn.disabled = false;
     }, 3000);
 });
