@@ -425,6 +425,12 @@
             botMessageDiv.textContent = Array.isArray(responseData) ? responseData[0].output : responseData.output;
             messagesContainer.appendChild(botMessageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            // 🔥 Enviar mensaje automático personalizado
+            await sendMessage("Hola");
+
+            
         } catch (error) {
             console.error('Error:', error);
         }
