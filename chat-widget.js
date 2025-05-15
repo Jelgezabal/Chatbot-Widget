@@ -5,9 +5,43 @@ class N8NChatWidget extends HTMLElement {
     }
 
     connectedCallback() {
-        // [Mantén el código inicial igual]
+        if (window.N8NChatWidgetInitialized) return;
+        window.N8NChatWidgetInitialized = true;
 
-        // [Después de añadir los elementos al DOM y antes de initLogic, añade estos estilos adicionales]
+        const defaultConfig = {
+            webhook: { url: "", route: "" },
+            branding: {
+                logo: "", name: "", welcomeText: "", responseTimeText: "",
+                poweredBy: { text: "", link: "" }
+            },
+            style: {
+                primaryColor: "#854fff",
+                secondaryColor: "#6b3fd4",
+                position: "right",
+                backgroundColor: "#ffffff",
+                fontColor: "#333333"
+            }
+        };
+
+        const config = window.ChatWidgetConfig
+            ? {
+                webhook: { ...defaultConfig.webhook, ...window.ChatWidgetConfig.webhook },
+                branding: { ...defaultConfig.branding, ...window.ChatWidgetConfig.branding },
+                style: { ...defaultConfig.style, ...window.ChatWidgetConfig.style }
+            }
+            : defaultConfig;
+
+        // Carga la fuente dentro del Shadow DOM
+        const fontLink = document.createElement("link");
+        fontLink.rel = "stylesheet";
+        fontLink.href = "https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-sans/style.css";
+        this.shadowRoot.appendChild(fontLink);
+
+        const styleTag = document.createElement("style");
+        styleTag.textContent = this.getStyles();
+        this.shadowRoot.appendChild(styleTag);
+
+        // Añadir estilos adicionales para el indicador de escritura
         const additionalStyles = document.createElement("style");
         additionalStyles.textContent = `
             .typing-indicator {
@@ -47,6 +81,58 @@ class N8NChatWidget extends HTMLElement {
         `;
         this.shadowRoot.appendChild(additionalStyles);
 
+        const widget = document.createElement("div");
+        widget.className = "n8n-chat-widget";
+        widget.style.setProperty("--n8n-chat-primary-color", config.style.primaryColor);
+        widget.style.setProperty("--n8n-chat-secondary-color", config.style.secondaryColor);
+        widget.style.setProperty("--n8n-chat-background-color", config.style.backgroundColor);
+        widget.style.setProperty("--n8n-chat-font-color", config.style.fontColor);
+
+        const toggleBtn = document.createElement("button");
+        toggleBtn.className = `chat-toggle${config.style.position === "left" ? " position-left" : ""}`;
+        toggleBtn.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+          <path d="M12 2C6.477 2 2 6.477 2 12c0 1.821.487 3.53 1.338 5L2.5 21.5l4.5-.838A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18c-1.476 0-2.886-.313-4.156-.878l-3.156.586.586-3.156A7.962 7.962 0 014 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/>
+        </svg>`;
+
+        const chatContainer = document.createElement("div");
+        chatContainer.className = `chat-container${config.style.position === "left" ? " position-left" : ""}`;
+        chatContainer.innerHTML = `
+        <div class="brand-header">
+          <img src="${config.branding.logo}" alt="${config.branding.name}">
+          <span>${config.branding.name}</span>
+          <button class="close-button">×</button>
+        </div>
+        <div class="new-conversation">
+          <h2 class="welcome-text">${config.branding.welcomeText}</h2>
+          <button class="new-chat-btn">
+            <svg class="message-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/>
+            </svg>
+            Chatea con nuestro agente
+          </button>
+          <p class="response-text">${config.branding.responseTimeText}</p>
+        </div>
+        <div class="chat-interface">
+          <div class="brand-header">
+            <img src="${config.branding.logo}" alt="${config.branding.name}">
+            <span>${config.branding.name}</span>
+            <button class="close-button">×</button>
+          </div>
+          <div class="chat-messages"></div>
+          <div class="chat-input">
+            <textarea placeholder="Escribe tu mensaje aquí:" rows="1"></textarea>
+            <button type="submit">Enviar</button>
+          </div>
+          <div class="chat-footer">
+            <a href="${config.branding.poweredBy.link}" target="_blank">${config.branding.poweredBy.text}</a>
+          </div>
+        </div>`;
+
+        widget.appendChild(chatContainer);
+        widget.appendChild(toggleBtn);
+        this.shadowRoot.appendChild(widget);
+
         this.initLogic(chatContainer, widget, config);
     }
 
@@ -59,8 +145,9 @@ class N8NChatWidget extends HTMLElement {
         const sendButton = container.querySelector('button[type="submit"]');
         const closeButtons = container.querySelectorAll(".close-button");
         
+        // Fix: enable mouse wheel scroll inside shadow DOM
         messagesContainer.addEventListener('wheel', (e) => {
-            e.stopPropagation();
+            e.stopPropagation(); // important
             messagesContainer.scrollTop += e.deltaY;
         }, { passive: true });
         
@@ -101,7 +188,7 @@ class N8NChatWidget extends HTMLElement {
             isProcessingQueue = true;
             
             // Mostrar indicador de escritura
-            const typingIndicator = showTypingIndicator();
+            showTypingIndicator();
             
             // Esperar un tiempo para simular escritura
             await new Promise(resolve => setTimeout(resolve, 800));
@@ -127,6 +214,8 @@ class N8NChatWidget extends HTMLElement {
 
         // Función para extraer bloques de un mensaje
         function extractBlocks(message) {
+            if (!message) return ["No hay respuesta"];
+            
             const regex = /\[BLOQUE\](.*?)\[\/BLOQUE\]/gs;
             const blocks = [];
             let match;
@@ -207,11 +296,15 @@ class N8NChatWidget extends HTMLElement {
                 }
             } catch (e) {
                 console.error("Error:", e);
+                // Mostrar mensaje de error al usuario
+                const errorMsg = document.createElement("div");
+                errorMsg.className = "chat-message bot";
+                errorMsg.textContent = "Lo siento, ha ocurrido un error al procesar tu mensaje. Por favor, inténtalo de nuevo.";
+                messagesContainer.appendChild(errorMsg);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
         }
 
-        // [Mantén el resto del código igual]
-        
         newChatBtn.addEventListener("click", async () => {
             if (started || newChatBtn.disabled) return;
             started = true;
@@ -250,7 +343,279 @@ class N8NChatWidget extends HTMLElement {
         });
     }
 
-    // [Mantén getStyles() igual]
+    getStyles() {
+        return `
+          .n8n-chat-widget {
+            --chat--color-primary: var(--n8n-chat-primary-color, #854fff);
+            --chat--color-secondary: var(--n8n-chat-secondary-color, #6b3fd4);
+            --chat--color-background: var(--n8n-chat-background-color, #ffffff);
+            --chat--color-font: var(--n8n-chat-font-color, #333333);
+            font-family: 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+          }
+    
+          .chat-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: none;
+            width: 380px;
+            height: 600px;
+            background: var(--chat--color-background);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(133, 79, 255, 0.15);
+            border: 1px solid rgba(133, 79, 255, 0.2);
+            overflow: hidden;
+            font-family: inherit;
+          }
+    
+          .chat-container.position-left {
+            right: auto;
+            left: 20px;
+          }
+    
+          .chat-container.open {
+            display: flex;
+            flex-direction: column;
+          }
+    
+          .brand-header {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(133, 79, 255, 0.1);
+            position: relative;
+          }
+    
+          .close-button {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--chat--color-font);
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+            font-size: 20px;
+            opacity: 0.6;
+          }
+    
+          .close-button:hover {
+            opacity: 1;
+          }
+    
+          .brand-header img {
+            width: 78px;
+            height: 32px;
+          }
+    
+          .brand-header span {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--chat--color-font);
+          }
+    
+          .new-conversation {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            text-align: center;
+            width: 100%;
+            max-width: 300px;
+          }
+    
+          .welcome-text {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--chat--color-font);
+            margin-bottom: 24px;
+            line-height: 1.3;
+          }
+    
+          .new-chat-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, var(--chat--color-primary) 0%, var(--chat--color-secondary) 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.3s;
+            font-weight: 500;
+            font-family: inherit;
+            margin-bottom: 12px;
+          }
+    
+          .new-chat-btn:hover {
+            transform: scale(1.02);
+          }
+    
+          .message-icon {
+            width: 20px;
+            height: 20px;
+          }
+    
+          .response-text {
+            font-size: 14px;
+            color: var(--chat--color-font);
+            opacity: 0.7;
+            margin: 0;
+          }
+    
+          .chat-interface {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+          }
+    
+          .chat-interface.active {
+            display: flex;
+          }
+    
+          .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--chat--color-background);
+            display: flex;
+            flex-direction: column;
+          }
+    
+          .chat-message {
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.5;
+          }
+    
+          .chat-message.user {
+            background: linear-gradient(135deg, var(--chat--color-primary) 0%, var(--chat--color-secondary) 100%);
+            color: white;
+            align-self: flex-end;
+            box-shadow: 0 4px 12px rgba(133, 79, 255, 0.2);
+            border: none;
+          }
+    
+          .chat-message.bot {
+            background: var(--chat--color-background);
+            border: 1px solid rgba(133, 79, 255, 0.2);
+            color: var(--chat--color-font);
+            align-self: flex-start;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          }
+    
+          .chat-input {
+            padding: 16px;
+            background: var(--chat--color-background);
+            border-top: 1px solid rgba(133, 79, 255, 0.1);
+            display: flex;
+            gap: 8px;
+          }
+    
+          .chat-input textarea {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid rgba(133, 79, 255, 0.2);
+            border-radius: 8px;
+            background: var(--chat--color-background);
+            color: var(--chat--color-font);
+            resize: none;
+            font-family: inherit;
+            font-size: 14px;
+          }
+    
+          .chat-input textarea::placeholder {
+            color: var(--chat--color-font);
+            opacity: 0.6;
+          }
+    
+          .chat-input button {
+            background: linear-gradient(135deg, var(--chat--color-primary) 0%, var(--chat--color-secondary) 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 20px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-family: inherit;
+            font-weight: 500;
+          }
+    
+          .chat-input button:hover {
+            transform: scale(1.05);
+          }
+    
+          .chat-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, var(--chat--color-primary) 0%, var(--chat--color-secondary) 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(133, 79, 255, 0.3);
+            z-index: 999;
+            transition: transform 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+    
+          .chat-toggle.position-left {
+            right: auto;
+            left: 20px;
+          }
+    
+          .chat-toggle:hover {
+            transform: scale(1.05);
+          }
+    
+          .chat-toggle svg {
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+          }
+    
+          .chat-footer {
+            padding: 8px;
+            text-align: center;
+            background: var(--chat--color-background);
+            border-top: 1px solid rgba(133, 79, 255, 0.1);
+          }
+    
+          .chat-footer a {
+            color: var(--chat--color-primary);
+            text-decoration: none;
+            font-size: 12px;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            font-family: inherit;
+          }
+    
+          .chat-footer a:hover {
+            opacity: 1;
+          }
+      `;
+    }
 }
 
 customElements.define('chat-widget', N8NChatWidget);
