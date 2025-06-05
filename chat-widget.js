@@ -434,12 +434,29 @@ async function processMessageQueue() {
     });
 
     toggleButton.addEventListener("click", () => {
+      const isOpening = !container.classList.contains("open");
+      const pingElement = toggleButton.querySelector('.animate-ping');
+      
       container.classList.toggle("open");
+      
+      // Controlar el parpadeo según el estado
+      if (isOpening && pingElement) {
+        pingElement.style.display = 'none'; // Ocultar parpadeo al abrir
+      } else if (!isOpening && pingElement) {
+        pingElement.style.display = 'inline-flex'; // Mostrar parpadeo al cerrar
+      }
     });
 
     closeButtons.forEach(btn => {
       btn.addEventListener("click", () => {
+        const pingElement = toggleButton.querySelector('.animate-ping');
+        
         container.classList.remove("open");
+        
+        // Restaurar parpadeo al cerrar la ventana
+        if (pingElement) {
+          pingElement.style.display = 'inline-flex';
+        }
       });
     });
   }
@@ -453,8 +470,8 @@ async function processMessageQueue() {
           .cta-chat {
             position: absolute;
             bottom: 100%;               /* justo encima del botón */
-            right: 50%;                 /* ajustado para pantallas pequeñas */
-            transform: translateX(25%); /* movido hacia la izquierda */
+            right: 40%;                 /* más hacia la derecha */
+            transform: translateX(15%); /* menos desplazamiento hacia la izquierda */
             margin-bottom: 12px;        /* separación del botón */
             width: max-content;
             max-width: 160px;           /* reducido para móviles */
@@ -473,8 +490,8 @@ async function processMessageQueue() {
           /* Media query para pantallas muy pequeñas */
           @media (max-width: 480px) {
             .cta-chat {
-              right: 60%;
-              transform: translateX(40%);
+              right: 50%;               /* más hacia la derecha en móviles */
+              transform: translateX(30%); /* menos desplazamiento */
               max-width: 140px;
               font-size: 0.8rem;
             }
