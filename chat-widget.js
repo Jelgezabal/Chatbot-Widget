@@ -436,26 +436,37 @@ async function processMessageQueue() {
     toggleButton.addEventListener("click", () => {
       const isOpening = !container.classList.contains("open");
       const pingElement = toggleButton.querySelector('.animate-ping');
+      const ctaElement = toggleButton.querySelector('.cta-chat');
       
       container.classList.toggle("open");
       
-      // Controlar el parpadeo según el estado
+      // Controlar el parpadeo y cartel según el estado
       if (isOpening && pingElement) {
         pingElement.style.display = 'none'; // Ocultar parpadeo al abrir
       } else if (!isOpening && pingElement) {
         pingElement.style.display = 'inline-flex'; // Mostrar parpadeo al cerrar
+      }
+      
+      if (isOpening && ctaElement) {
+        ctaElement.style.display = 'none'; // Ocultar cartel al abrir
+      } else if (!isOpening && ctaElement) {
+        ctaElement.style.display = 'block'; // Mostrar cartel al cerrar
       }
     });
 
     closeButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         const pingElement = toggleButton.querySelector('.animate-ping');
+        const ctaElement = toggleButton.querySelector('.cta-chat');
         
         container.classList.remove("open");
         
-        // Restaurar parpadeo al cerrar la ventana
+        // Restaurar parpadeo y cartel al cerrar la ventana
         if (pingElement) {
           pingElement.style.display = 'inline-flex';
+        }
+        if (ctaElement) {
+          ctaElement.style.display = 'block';
         }
       });
     });
